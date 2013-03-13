@@ -16,10 +16,10 @@ Backbone.Syphon = (function(Backbone, $, _){
   // Alternately, pass a form element directly
   // in place of the view.
   Syphon.serialize = function(view, options){
-    var data = {};
-
     // Build the configuration
     var config = buildConfig(options);
+
+    var data = (config.keysOnly ? [] : {});
 
     // Get all of the elements to process
     var elements = getInputElements(view, config);
@@ -27,7 +27,7 @@ Backbone.Syphon = (function(Backbone, $, _){
     // Process all of the elements
     _.each(elements, function(el){
       var $el = $(el);
-      var type = getElementType($el); 
+      var type = getElementType($el);
 
       // Get the key for the input
       var keyExtractor = config.keyExtractors.get(type);
@@ -41,8 +41,16 @@ Backbone.Syphon = (function(Backbone, $, _){
       // it's valid before assigning the value to the key
       var validKeyAssignment = config.keyAssignmentValidators.get(type);
       if (validKeyAssignment($el, key, value)){
-        var keychain = config.keySplitter(key);
-        data = assignKeyValue(data, keychain, value);
+        var keychain;
+        if (config.keysOnly) {
+          keychain = config.keySplitter(key);
+            if (keychain !== null) {
+                data.push(keychain[0]);
+            }
+        } else {
+          keychain = config.keySplitter(key);
+          data = assignKeyValue(data, keychain, value);
+        }
       }
     });
 
@@ -164,6 +172,7 @@ Backbone.Syphon = (function(Backbone, $, _){
     config.keySplitter = config.keySplitter || Syphon.KeySplitter;
     config.keyJoiner = config.keyJoiner || Syphon.KeyJoiner;
     config.keyAssignmentValidators = config.keyAssignmentValidators || Syphon.KeyAssignmentValidators;
+    config.keysOnly = config.keysOnly || false;
     
     return config;
   };
